@@ -1,0 +1,116 @@
+
+buildscript {
+  repositories {
+    jcenter()
+    gradlePluginPortal()
+    maven { url "https://plugins.gradle.org/m2/" }
+  }
+  dependencies {
+    classpath 'com.github.jengelman.gradle.plugins:shadow:5.0.0'
+    classpath 'com.diffplug.spotless:spotless-plugin-gradle:3.14.0'
+    classpath 'gradle.plugin.org.inferred:gradle-processors:2.1.0'
+    //classpath 'me.champeau.gradle:jmh-gradle-plugin:0.5.2'
+  }
+}
+
+allprojects {
+  group = "com.test"
+  version = "1.0"
+  repositories {
+    mavenCentral()
+    mavenLocal()
+  }
+  
+  
+}
+
+
+
+subprojects {
+  apply plugin: 'java'
+  apply plugin: 'scala'
+  apply plugin: 'com.github.johnrengelman.shadow'
+  //apply plugin: "me.champeau.gradle.jmh"
+
+  configurations {
+    testCompile.extendsFrom compileOnly
+    all {
+      exclude group: 'org.slf4j', module: 'slf4j-log4j12'
+    }
+
+    testArtifacts
+  }
+
+  compileJava {
+    options.encoding = "UTF-8"
+  }
+
+  compileTestJava {
+    options.encoding = "UTF-8"
+  }
+
+  ext {
+    jmhVersion = '1.21'
+  }
+
+  sourceCompatibility = '1.8'
+  targetCompatibility = '1.8'
+  sourceSets.create("jmh") {
+    java.setSrcDirs(["src/jmh/java"])
+  }
+  configurations {
+  jmh
+}
+
+sourceSets {
+  jmh
+}
+
+project.sourceSets.jmh {
+  compileClasspath += project.configurations.jmh + project.sourceSets.main.output
+  runtimeClasspath += project.configurations.jmh + project.sourceSets.main.output
+}
+  sourceSets {
+    jmh {
+        java.srcDirs = ['src/jmh/java']
+        scala.srcDirs = ['src/jmh/scala']
+        resources.srcDirs = ['src/jmh/resources']
+        compileClasspath += sourceSets.main.runtimeClasspath
+    }
+  }
+
+  dependencies {
+    compile group: 'org.scala-lang', name: 'scala-library', version: '2.12.1'
+    jmhImplementation (project)
+    jmhImplementation 'org.openjdk.jmh:jmh-core:1.21'
+    jmhAnnotationProcessor 'org.openjdk.jmh:jmh-generator-annprocess:1.21'
+    jmh (
+      [project.configurations.compile]
+    )
+  }
+  
+  task jmhJar(type: Jar, dependsOn: jmhClasses) {
+  
+    from (project.configurations.jmh.collect {it.isDirectory() ? it : project.zipTree(it)}) {
+      exclude '**/META-INF/services/**'
+      exclude '**/META-INF/*.SF'
+      exclude '**/META-INF/*.DSA'
+      exclude '**/META-INF/*.RSA'
+    }
+    from project.sourceSets.jmh.output
+    from project.sourceSets.main.output
+    duplicatesStrategy(DuplicatesStrategy.EXCLUDE)
+  
+  manifest {
+    attributes 'Main-Class':'org.openjdk.jmh.Main'
+  }
+
+  classifier = 'jmh'
+}
+
+task jmh(type: JavaExec, dependsOn: jmhJar) {
+  main = 'org.openjdk.jmh.Main'
+  classpath = project.files(project.jmhJar.archivePath) + project.sourceSets.main.runtimeClasspath + project.sourceSets.jmh.runtimeClasspath
+}
+}
+//apply from: 'jmh.gradle'

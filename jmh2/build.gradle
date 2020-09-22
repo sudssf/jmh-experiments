@@ -1,0 +1,81 @@
+
+buildscript {
+  repositories {
+    jcenter()
+    gradlePluginPortal()
+    maven { url "https://plugins.gradle.org/m2/" }
+  }
+  dependencies {
+    classpath 'com.github.jengelman.gradle.plugins:shadow:5.0.0'
+    classpath 'com.diffplug.spotless:spotless-plugin-gradle:3.14.0'
+    classpath 'gradle.plugin.org.inferred:gradle-processors:2.1.0'
+    classpath 'me.champeau.gradle:jmh-gradle-plugin:0.5.2'
+  }
+}
+//apply from: 'jmh.gradle'
+allprojects {
+  group = "com.test"
+  version = "1.0"
+  repositories {
+    mavenCentral()
+    mavenLocal()
+  }
+  
+  
+}
+
+apply plugin: 'me.champeau.gradle.jmh'
+jmhJar.baseName = 'custom'
+
+subprojects {
+    apply plugin: 'java'
+    apply plugin: 'scala'
+    apply plugin: 'me.champeau.gradle.jmh'
+
+    jmh {
+        include = '.*'
+        humanOutputFile = null
+        warmupIterations = 1
+        iterations = 1
+    }
+
+
+dependencies {
+     compile group: 'org.scala-lang', name: 'scala-library', version: '2.12.1'
+  }
+}
+// subprojects {
+//   apply plugin: 'java'
+//   apply plugin: 'scala'
+//   apply plugin: 'com.github.johnrengelman.shadow'
+//   apply plugin: "me.champeau.gradle.jmh"
+
+//   sourceCompatibility = '1.8'
+//   targetCompatibility = '1.8'
+//   sourceSets {
+//     jmh {
+//         java.srcDirs = ['src/jmh/java']
+//         scala.srcDirs = ['src/jmh/scala']
+//         resources.srcDirs = ['src/jmh/resources']
+//         compileClasspath += sourceSets.main.runtimeClasspath
+//     }
+//   }
+//    ext {
+//     jmhVersion = '1.21'
+//   }
+//   jmh {
+//     jmhVersion = jmhVersion
+//     failOnError = true
+//     forceGC = true
+//     includeTests = true
+//     humanOutputFile = file(jmhOutputPath)
+//     include = ["Bench*"]
+//   }
+//   dependencies {
+//     compile group: 'org.scala-lang', name: 'scala-library', version: '2.12.1'
+//     jmhImplementation (project)
+//     jmhImplementation 'org.openjdk.jmh:jmh-core:1.21'
+//     jmhAnnotationProcessor 'org.openjdk.jmh:jmh-generator-annprocess:1.21'
+//   }
+// }
+
